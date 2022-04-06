@@ -7,6 +7,7 @@ coreschema==0.0.4
 cryptography==36.0.2
 defusedxml==0.7.1
 Django==2.2.19
+django-extra-fields==3.0.2
 django-templated-mail==1.1.1
 djangorestframework==3.13.1
 djangorestframework-simplejwt==4.8.0

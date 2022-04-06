@@ -5,25 +5,27 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics
-from .serializers import ChangePasswordSerializer
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import UserSerializer
+from .pagination import CustomPagination
+from .serializers import UserSerializer, TagSerializer, ChangePasswordSerializer, IngredientSerializer, \
+    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer
 from users.models import User
+from dish_recipes.models import Tag, Ingredient, Recipe, Follow, Favorites, ShopList
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Сериализатор для модели пользователей."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = CustomPagination
     permission_classes = [AllowAny]
 
 
 class ChangePasswordView(generics.CreateAPIView):
-    """
-    Конечная точка для смены пароля.
-    """
+    """Конечная точка для смены пароля."""
     serializer_class = ChangePasswordSerializer
-    model = User
+
     permission_classes = (IsAuthenticated,)
 
     def get_object(self, queryset=None):
@@ -58,7 +60,44 @@ class UsersMeApiView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        """Получаем себя при обращении на users/me."""
         serializer = UserSerializer(self.request.user)
         return Response(serializer.data)
 
+
+class TagViewSet(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = None
+
+
+class IngredientViewSet(viewsets.ModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    pagination_class = None
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        return serializer.save(author=self.request.user)
+
+
+class FollowViewSet(viewsets.ModelViewSet):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+    pagination_class = CustomPagination
+
+
+class FavoritesViewSet(viewsets.ModelViewSet):
+    queryset = Favorites.objects.all()
+    serializer_class = FavoritesSerializer
+    pagination_class = None
+
+
+class ShopListViewSet(viewsets.ModelViewSet):
+    queryset = ShopList.objects.all()
+    serializer_class = ShopListSerializer
+    pagination_class = None

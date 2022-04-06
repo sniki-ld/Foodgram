@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
 from .models import Tag, Ingredient, Recipe, IngredientAmount, Follow, Favorites, ShopList
 
@@ -8,6 +9,7 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'color')
     list_filter = ('name',)
     search_fields = ('name',)
+    prepopulated_fields = {'slug': ('name',), }
     empty_value_display = '-пусто-'
 
 
@@ -15,17 +17,29 @@ class IngredientAdmin(admin.ModelAdmin):
     """Администрирование ингредиентов."""
     list_display = ('name', 'measurement_unit')
     list_filter = ('name',)
-    search_fields = ('name',)
+    search_fields = ('^name',)
     empty_value_display = '-пусто-'
 
 
 class RecipeAdmin(admin.ModelAdmin):
     """Администрирование рецептов."""
-    list_display = ('id', 'author', 'name')
+    list_display = ('id', 'author', 'name', 'cooking_time', 'show_ingredients', 'preview', 'favorited_count')
     list_filter = ('author', 'name', 'tags')
     search_fields = ('name',)
-    exclude = ('ingredients',)
+    ordering = ('name',)
     empty_value_display = '-пусто-'
+
+    readonly_fields = ['preview']
+
+    def preview(self, obj):
+        return mark_safe(f'<img src="{obj.image.url}" style="max-height: 95px;>')
+
+    def show_ingredients(self, obj):
+        return '\n'.join([item.name for item in obj.ingredients.all()])
+
+    def favorited_count(self, obj):
+        favorited_count = Favorites.objects.filter(recipe=obj).count()
+        return favorited_count
 
 
 class IngredientAmountAdmin(admin.ModelAdmin):

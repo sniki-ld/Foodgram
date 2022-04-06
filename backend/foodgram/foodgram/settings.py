@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = os.getenv('SECRET_KEY')
-SECRET_KEY='x4*gr*e&#s2s=kw2&t-pew_d13t@yd%f8n)+gq_0735h(e=4zz'
+SECRET_KEY = 'x4*gr*e&#s2s=kw2&t-pew_d13t@yd%f8n)+gq_0735h(e=4zz'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -138,6 +138,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
+
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6
 }
 
 STATIC_URL = '/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
