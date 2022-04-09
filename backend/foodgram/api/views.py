@@ -1,4 +1,5 @@
 from rest_framework.authtoken.admin import User
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, status, permissions
 from rest_framework.permissions import AllowAny
@@ -9,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .pagination import CustomPagination
 from .serializers import UserSerializer, TagSerializer, ChangePasswordSerializer, IngredientSerializer, \
-    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer
+    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer, RecipeAddSerializer
 from users.models import User
 from dish_recipes.models import Tag, Ingredient, Recipe, Follow, Favorites, ShopList
 
@@ -18,8 +19,20 @@ class UserViewSet(viewsets.ModelViewSet):
     """Сериализатор для модели пользователей."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = CustomPagination
-    permission_classes = [AllowAny]
+    # pagination_class = CustomPagination
+    # permission_classes = [AllowAny]
+
+    @action(detail=True, methods=['post'])
+    def set_password(self, request, pk=None):
+        user = self.get_object()
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({'status': 'password set'})
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ChangePasswordView(generics.CreateAPIView):
@@ -76,7 +89,18 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
 
+#
+# class RecipeViewSet(viewsets.ModelViewSet):
+#     queryset = Recipe.objects.all()
+#     serializer_class = RecipeSerializer
+#     pagination_class = CustomPagination
+#
+#     def perform_create(self, serializer):
+#         return serializer.save(author=self.request.user)
+
+
 class RecipeViewSet(viewsets.ModelViewSet):
+    """ViewSet для работы с рецептами.Для анонимов разрешен только просмотр рецептов."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = CustomPagination
@@ -84,11 +108,34 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
+    def get_serializer_class(self):
+        if self.action == 'create' or self.action == 'partial_update':
+            return RecipeSerializer
+        return RecipeAddSerializer
+
+    # def create(self, request, *args, **kwargs):
+    #     data = request.data
+    #     data["user"] = request.user.id
+    #     data["recipe"] = kwargs.get("recipe_id")
+    #
+    #     serializer = self.get_serializer(data=data)
+    #     serializer.is_valid(raise_exception=True)
+    #     self.perform_create(serializer)
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED,
+    #                     headers=headers)
+
 
 class FollowViewSet(viewsets.ModelViewSet):
-    queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     pagination_class = CustomPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.follower.all()
+
+    def perform_create(self, serializer):
+        return serializer.save(user=self.request.user)
 
 
 class FavoritesViewSet(viewsets.ModelViewSet):

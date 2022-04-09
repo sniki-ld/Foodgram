@@ -7,6 +7,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
+    """Модель, представляющая тэги для фильтрации рецептов."""
     name = models.CharField(
         verbose_name='название',
         max_length=200,
@@ -34,12 +35,13 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    """Модель, представляющая ингредиент (продукт) и его единицы измерения."""
     name = models.CharField(
         verbose_name='название',
         max_length=200,
     )
     measurement_unit = models.CharField(
-        verbose_name='еденица измерения',
+        verbose_name='единица измерения',
         max_length=200,
     )
 
@@ -52,7 +54,25 @@ class Ingredient(models.Model):
         return f'{self.name}, {self.measurement_unit}'
 
 
+class IngredientAmount(models.Model):
+    """Модель для связи рецептов и ингредиентов."""
+    ingredient = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+        verbose_name='ингредиент',
+        related_name='ingredients_amounts',
+    )
+    amount = models.PositiveIntegerField(
+        verbose_name='количество ингредиента',
+    )
+
+    class Meta:
+        verbose_name = 'количество ингредиента в рецепте'
+        verbose_name_plural = 'количество ингредиентов в рецепте'
+
+
 class Recipe(models.Model):
+    """Модель, представляющая рецепт."""
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name='автор',
@@ -62,23 +82,24 @@ class Recipe(models.Model):
     name = models.CharField(
         verbose_name='название',
         max_length=200,
+        help_text='Введите название рецепта'
     )
     text = models.TextField(
-        verbose_name='описание',
+        verbose_name='описание рецепта',
     )
     image = models.ImageField(
         verbose_name='изображение',
         upload_to='recipes/',
     )
-    ingredients = models.ManyToManyField(
-        Ingredient,
+    ingredient = models.ManyToManyField(
+        IngredientAmount,
         related_name='recipes',
-        through='IngredientAmount',
         verbose_name='ингредиенты',
     )
-    tags = models.ManyToManyField(
+    tag = models.ManyToManyField(
         Tag,
         related_name='recipes',
+        through='RecipeTag',
         verbose_name='теги',
     )
     cooking_time = models.PositiveIntegerField(
@@ -99,34 +120,23 @@ class Recipe(models.Model):
         return self.name
 
 
-class IngredientAmount(models.Model):
-    ingredient = models.ForeignKey(
-        Ingredient,
-        on_delete=models.CASCADE,
-        verbose_name='ингредиент',
-        related_name='ingredients_amounts',
-    )
+class RecipeTag(models.Model):
+    """Модель для связи рецептов и тегов."""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredients_amounts',
+        related_name='tags',
+        verbose_name='рецепт'
     )
-    amount = models.PositiveIntegerField(
-        verbose_name='количество ингредиента',
+    tag = models.ForeignKey(
+        Tag,
+        on_delete=models.CASCADE,
+        verbose_name='тэг'
     )
-
-    class Meta:
-        verbose_name = 'количество ингредиента в рецепте'
-        verbose_name_plural = 'количество ингредиентов в рецепте'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['ingredient', 'recipe'],
-                name='recipe_ingredient_unique',
-            )
-        ]
 
 
 class Follow(models.Model):
+    """Модель, представляющая подписки."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -152,6 +162,7 @@ class Follow(models.Model):
 
 
 class Favorites(models.Model):
+    """Модель, представляющая избранные рецепты."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -177,6 +188,7 @@ class Favorites(models.Model):
 
 
 class ShopList(models.Model):
+    """Модель для добавления рецепта в список покупок."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

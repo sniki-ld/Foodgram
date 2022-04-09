@@ -1,7 +1,6 @@
 from django.contrib import admin
-from django.utils.safestring import mark_safe
 
-from .models import Tag, Ingredient, Recipe, IngredientAmount, Follow, Favorites, ShopList
+from .models import Tag, Ingredient, Recipe, IngredientAmount, Follow, Favorites, ShopList, RecipeTag
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -17,25 +16,23 @@ class IngredientAdmin(admin.ModelAdmin):
     """Администрирование ингредиентов."""
     list_display = ('name', 'measurement_unit')
     list_filter = ('name',)
-    search_fields = ('^name',)
+    search_fields = ('name',)
     empty_value_display = '-пусто-'
 
 
 class RecipeAdmin(admin.ModelAdmin):
     """Администрирование рецептов."""
-    list_display = ('id', 'author', 'name', 'cooking_time', 'show_ingredients', 'preview', 'favorited_count')
+    list_display = ('id', 'author', 'name', 'show_tags', 'cooking_time', 'show_ingredients', 'favorited_count')
     list_filter = ('author', 'name', 'tags')
-    search_fields = ('name',)
+    search_fields = ('name', 'author', 'tags')
     ordering = ('name',)
     empty_value_display = '-пусто-'
 
-    readonly_fields = ['preview']
-
-    def preview(self, obj):
-        return mark_safe(f'<img src="{obj.image.url}" style="max-height: 95px;>')
-
     def show_ingredients(self, obj):
-        return '\n'.join([item.name for item in obj.ingredients.all()])
+        return '\n'.join([item.ingredient.name for item in obj.ingredient.all()])
+
+    def show_tags(self, obj):
+        return '\n'.join([item.name for item in obj.tag.all()])
 
     def favorited_count(self, obj):
         favorited_count = Favorites.objects.filter(recipe=obj).count()
@@ -43,7 +40,11 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 class IngredientAmountAdmin(admin.ModelAdmin):
-    list_display = ('recipe', 'ingredient', 'amount')
+    list_display = ('ingredient', 'amount')
+
+
+class RecipeTagAdmin(admin.ModelAdmin):
+    list_display = ('recipe', 'tag')
 
 
 class FollowAdmin(admin.ModelAdmin):
@@ -62,6 +63,7 @@ class ShopListAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Tag, TagAdmin)
+admin.site.register(RecipeTag, RecipeTagAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(IngredientAmount, IngredientAmountAdmin)

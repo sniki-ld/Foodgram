@@ -7,7 +7,7 @@ class UserAdmin(admin.ModelAdmin):
     """ Администрирование пользователей."""
     list_display = ('id', 'email', 'username', 'first_name', 'last_name')
     list_filter = ('email', 'username')
-    search_fields = ('username',)
+    search_fields = ('username', 'email')
     ordering = ('username',)
     empty_value_display = '-пусто-'
 
