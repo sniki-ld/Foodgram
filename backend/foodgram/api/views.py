@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.admin import User
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -22,17 +23,45 @@ class UserViewSet(viewsets.ModelViewSet):
     # pagination_class = CustomPagination
     # permission_classes = [AllowAny]
 
-    @action(detail=True, methods=['post'])
-    def set_password(self, request, pk=None):
-        user = self.get_object()
-        serializer = ChangePasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            user.set_password(serializer.validated_data['new_password'])
-            user.save()
-            return Response({'status': 'password set'})
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+    # @action(detail=True, methods=['post'])
+    # def set_password(self, request, pk=None):
+    #     user = self.get_object()
+    #     serializer = ChangePasswordSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         user.set_password(serializer.validated_data['new_password'])
+    #         user.save()
+    #         return Response({'status': 'password set'})
+    #     else:
+    #         return Response(serializer.errors,
+    #                         status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, permission_classes=[IsAuthenticated])
+    def subscribe(self, request, id=None):
+        user = request.user
+        author = get_object_or_404(User, id=id)
+
+        data = {
+            'user': user.id,
+            'author': author.id,
+        }
+        serializer = FollowSerializer(
+            data=data, context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, id=None):
+        user = request.user
+        author = get_object_or_404(User, id=id)
+        subscribe = get_object_or_404(
+            Follow, user=user, author=author
+        )
+        subscribe.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ChangePasswordView(generics.CreateAPIView):
