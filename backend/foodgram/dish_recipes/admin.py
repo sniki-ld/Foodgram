@@ -31,12 +31,18 @@ class RecipeAdmin(admin.ModelAdmin):
     def show_ingredients(self, obj):
         return '\n'.join([item.ingredient.name for item in obj.ingredient.all()])
 
+    show_ingredients.short_description = 'Ингредиенты в рецепте'
+
     def show_tags(self, obj):
         return '\n'.join([item.name for item in obj.tag.all()])
+
+    show_tags.short_description = 'Тэги в рецепте'
 
     def favorited_count(self, obj):
         favorited_count = Favorites.objects.filter(recipe=obj).count()
         return favorited_count
+
+    favorited_count.short_description = 'В избранном'
 
 
 class IngredientAmountAdmin(admin.ModelAdmin):

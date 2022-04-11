@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .pagination import CustomPagination
 from .serializers import UserSerializer, TagSerializer, ChangePasswordSerializer, IngredientSerializer, \
-    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer, RecipeAddSerializer
+    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer, RecipeAddSerializer, UserShowSerializer
 from users.models import User
 from dish_recipes.models import Tag, Ingredient, Recipe, Follow, Favorites, ShopList
 
@@ -20,8 +20,14 @@ class UserViewSet(viewsets.ModelViewSet):
     """Сериализатор для модели пользователей."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
     # pagination_class = CustomPagination
     # permission_classes = [AllowAny]
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UserSerializer
+        return UserShowSerializer
 
     # @action(detail=True, methods=['post'])
     # def set_password(self, request, pk=None):
@@ -129,7 +135,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с рецептами.Для анонимов разрешен только просмотр рецептов."""
+    """ViewSet для работы с рецептами."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = CustomPagination
