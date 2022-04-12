@@ -134,8 +134,8 @@ class RecipeAddSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'tags', 'author', 'name', 'text', 'ingredients',
-                  'image', 'cooking_time', 'is_favorited', 'is_in_shopping_cart')
+        fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited', 'is_in_shopping_cart', 'name', 'image', 'text',
+                  'cooking_time')
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -181,8 +181,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'tags', 'author', 'name', 'text',
-                  'image', 'ingredients', 'cooking_time')
+        fields = ('id', 'tags', 'author', 'ingredients', 'name', 'text',
+                  'image', 'cooking_time')
 
     def validate(self, data):
         """Проверяем, создавал ли пользователь рецепт с таким же именем ранее."""
@@ -212,9 +212,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
             )
             recipe.ingredient.add(add_ingredient)
-
-        for tag in tags_data:
-            RecipeTag.objects.create(recipe=recipe, tag=tag)
+        recipe.tag.set(tags_data)
+        # for tag in tags_data:
+        #     RecipeTag.objects.create(recipe=recipe, tag=tag)
 
         return recipe
 
@@ -224,6 +224,34 @@ class RecipeSerializer(serializers.ModelSerializer):
             context={"request": self.context.get("request")}
         ).data
 
+    def update(self, instance, validated_data):
+        ingredients_data = validated_data.pop('ingredient')
+        instance.image = validated_data.get('image', instance.image)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
+        instance.tag.clear()
+        tags_data = self.initial_data.get('tags')
+        instance.tag.set(tags_data)
+        IngredientAmount.objects.filter(recipes=instance).delete()
+        for ingredient in ingredients_data:
+            add_ingredient = IngredientAmount.objects.create(
+                ingredient=ingredient['id'],
+                amount=ingredient['amount']
+
+            )
+            instance.ingredient.add(add_ingredient)
+        instance.save()
+        return instance
+
+    # def update(self, instance, validated_data):
+    #     instance.tag.clear()
+    #     IngredientAmount.objects.filter(recipe=instance).delete()
+    #     self.create_tags(validated_data.pop('tag'), instance)
+    #     self.create_ingredients(validated_data.pop('ingredient'), instance)
+    #     return super().update(instance, validated_data)
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
@@ -287,7 +315,7 @@ class FollowerSerializer(serializers.ModelSerializer):
     #             author=obj.author
     #         )[:int(limit)]
 
-        # return FollowerRecipeSerializer(queryset, many=True).data
+    # return FollowerRecipeSerializer(queryset, many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
