@@ -29,6 +29,25 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserSerializer
         return UserShowSerializer
 
+    @action(['post'], detail=False, permission_classes=(IsAuthenticated,))
+    def set_password(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            # Проверить старый пароль
+            if not self.request.user.check_password(serializer.data.get("current_password")):
+                return Response({"current_password": ["Неверный пароль."]}, status=status.HTTP_400_BAD_REQUEST)
+            # set_password также хеширует пароль, который получит пользователь
+            self.request.user.set_password(
+                serializer.validated_data['new_password']
+            )
+            self.request.user.save()
+            response = {
+                'message': 'Пароль успешно обновлен',
+            }
+
+            return Response(response)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     # @action(detail=True, methods=['post'])
     # def set_password(self, request, pk=None):
     #     user = self.get_object()
@@ -41,34 +60,34 @@ class UserViewSet(viewsets.ModelViewSet):
     #         return Response(serializer.errors,
     #                         status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, permission_classes=[IsAuthenticated])
-    def subscribe(self, request, id=None):
-        user = request.user
-        author = get_object_or_404(User, id=id)
-
-        data = {
-            'user': user.id,
-            'author': author.id,
-        }
-        serializer = FollowSerializer(
-            data=data, context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @subscribe.mapping.delete
-    def delete_subscribe(self, request, id=None):
-        user = request.user
-        author = get_object_or_404(User, id=id)
-        subscribe = get_object_or_404(
-            Follow, user=user, author=author
-        )
-        subscribe.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+    # @action(detail=True, permission_classes=[IsAuthenticated])
+    # def subscribe(self, request, id=None):
+    #     user = request.user
+    #     author = get_object_or_404(User, id=id)
+    #
+    #     data = {
+    #         'user': user.id,
+    #         'author': author.id,
+    #     }
+    #     serializer = FollowSerializer(
+    #         data=data, context={'request': request}
+    #     )
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #
+    # @subscribe.mapping.delete
+    # def delete_subscribe(self, request, id=None):
+    #     user = request.user
+    #     author = get_object_or_404(User, id=id)
+    #     subscribe = get_object_or_404(
+    #         Follow, user=user, author=author
+    #     )
+    #     subscribe.delete()
+    #
+    #     return Response(status=status.HTTP_204_NO_CONTENT)
+    #
 
 class ChangePasswordView(generics.CreateAPIView):
     """Конечная точка для смены пароля."""
@@ -124,16 +143,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
 
-#
-# class RecipeViewSet(viewsets.ModelViewSet):
-#     queryset = Recipe.objects.all()
-#     serializer_class = RecipeSerializer
-#     pagination_class = CustomPagination
-#
-#     def perform_create(self, serializer):
-#         return serializer.save(author=self.request.user)
-
-
 class RecipeViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с рецептами."""
     queryset = Recipe.objects.all()
@@ -144,21 +153,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return serializer.save(author=self.request.user)
 
     def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'partial_update':
+        if self.action == 'create' or self.action == 'update':
             return RecipeSerializer
         return RecipeAddSerializer
-
-    # def create(self, request, *args, **kwargs):
-    #     data = request.data
-    #     data["user"] = request.user.id
-    #     data["recipe"] = kwargs.get("recipe_id")
-    #
-    #     serializer = self.get_serializer(data=data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED,
-    #                     headers=headers)
 
 
 class FollowViewSet(viewsets.ModelViewSet):

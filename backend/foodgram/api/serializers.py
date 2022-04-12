@@ -172,11 +172,9 @@ class RecipeSerializer(serializers.ModelSerializer):
     """
     image = Base64ImageField()
     author = UserShowSerializer(read_only=True)
-    # ingredients = IngredientAmountSerializer(many=True, source='ingredient')
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True, source='tag',
     )
-
     ingredients = AddIngredientAmountSerializer(many=True, source='ingredient')
 
     class Meta:
@@ -213,16 +211,12 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
             recipe.ingredient.add(add_ingredient)
         recipe.tag.set(tags_data)
-        # for tag in tags_data:
-        #     RecipeTag.objects.create(recipe=recipe, tag=tag)
-
         return recipe
 
     def to_representation(self, instance):
         return RecipeAddSerializer(
             instance,
-            context={"request": self.context.get("request")}
-        ).data
+            context={"request": self.context.get("request")}).data
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredient')
@@ -245,13 +239,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.ingredient.add(add_ingredient)
         instance.save()
         return instance
-
-    # def update(self, instance, validated_data):
-    #     instance.tag.clear()
-    #     IngredientAmount.objects.filter(recipe=instance).delete()
-    #     self.create_tags(validated_data.pop('tag'), instance)
-    #     self.create_ingredients(validated_data.pop('ingredient'), instance)
-    #     return super().update(instance, validated_data)
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
