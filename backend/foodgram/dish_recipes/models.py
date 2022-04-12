@@ -142,14 +142,16 @@ class RecipeTag(models.Model):
 class Follow(models.Model):
     """Модель, представляющая подписки."""
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='follower',
+        verbose_name='подписчик',
     )
     author = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='following',
+        verbose_name='подписан на',
     )
 
     class Meta:
@@ -165,17 +167,19 @@ class Follow(models.Model):
         return f'{self.user} подписан на {self.author}'
 
 
-class Favorites(models.Model):
+class FavoritesRecipe(models.Model):
     """Модель, представляющая избранные рецепты."""
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='favorite_user',
+        verbose_name='автор'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         related_name='favorite_recipe',
+        verbose_name='рецепт'
     )
 
     class Meta:
@@ -194,14 +198,16 @@ class Favorites(models.Model):
 class ShopList(models.Model):
     """Модель для добавления рецепта в список покупок."""
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='user_shop_lists',
+        verbose_name='автор'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         related_name='recipe_shop_lists',
+        verbose_name='рецепт'
     )
 
     class Meta:
@@ -209,7 +215,7 @@ class ShopList(models.Model):
         verbose_name_plural = 'списки покупок'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'], name='purchase_user_recipe_unique'
+                fields=['user', 'recipe'],  name='unique_recipe_cart'
             )
         ]
 

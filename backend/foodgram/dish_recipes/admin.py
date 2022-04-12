@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Tag, Ingredient, Recipe, IngredientAmount, Follow, Favorites, ShopList, RecipeTag
+from .models import Tag, Ingredient, Recipe, IngredientAmount, Follow, FavoritesRecipe, ShopList, RecipeTag
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -24,7 +24,7 @@ class RecipeAdmin(admin.ModelAdmin):
     """Администрирование рецептов."""
     list_display = ('id', 'author', 'name', 'show_tags', 'cooking_time', 'show_ingredients', 'favorited_count')
     list_filter = ('author', 'name', 'tags')
-    search_fields = ('name', 'author', 'tags')
+    search_fields = ('name', 'author__username', 'tag__name')
     ordering = ('name',)
     empty_value_display = '-пусто-'
 
@@ -58,7 +58,7 @@ class FollowAdmin(admin.ModelAdmin):
     list_display = ('author', 'user')
 
 
-class FavoritesAdmin(admin.ModelAdmin):
+class FavoritesRecipeAdmin(admin.ModelAdmin):
     """Администрирование избранного."""
     list_display = ('user', 'recipe')
 
@@ -74,5 +74,5 @@ admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(IngredientAmount, IngredientAmountAdmin)
 admin.site.register(Follow, FollowAdmin)
-admin.site.register(Favorites, FavoritesAdmin)
+admin.site.register(FavoritesRecipe, FavoritesRecipeAdmin)
 admin.site.register(ShopList, ShopListAdmin)

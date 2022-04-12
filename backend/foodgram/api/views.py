@@ -11,9 +11,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from .pagination import CustomPagination
 from .serializers import UserSerializer, TagSerializer, ChangePasswordSerializer, IngredientSerializer, \
-    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer, RecipeAddSerializer, UserShowSerializer
+    RecipeSerializer, FollowSerializer, FavoritesSerializer, ShopListSerializer, RecipeAddSerializer, \
+    UserShowSerializer, FollowerSerializer
 from users.models import User
-from dish_recipes.models import Tag, Ingredient, Recipe, Follow, Favorites, ShopList
+from dish_recipes.models import Tag, Ingredient, Recipe, Follow, FavoritesRecipe, ShopList
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -48,87 +49,54 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(response)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # @action(detail=True, methods=['post'])
-    # def set_password(self, request, pk=None):
-    #     user = self.get_object()
-    #     serializer = ChangePasswordSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         user.set_password(serializer.validated_data['new_password'])
-    #         user.save()
-    #         return Response({'status': 'password set'})
-    #     else:
-    #         return Response(serializer.errors,
-    #                         status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, permission_classes=[IsAuthenticated])
+    def subscriptions(self, request):
+        user = self.request.user
+        queryset = Follow.objects.filter(user=user)
+        pages = self.paginate_queryset(queryset)
+        serializer = FollowerSerializer(
+            pages,
+            many=True,
+            context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)
 
-    # @action(detail=True, permission_classes=[IsAuthenticated])
-    # def subscribe(self, request, id=None):
-    #     user = request.user
-    #     author = get_object_or_404(User, id=id)
-    #
-    #     data = {
-    #         'user': user.id,
-    #         'author': author.id,
-    #     }
-    #     serializer = FollowSerializer(
-    #         data=data, context={'request': request}
-    #     )
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #
-    # @subscribe.mapping.delete
-    # def delete_subscribe(self, request, id=None):
-    #     user = request.user
-    #     author = get_object_or_404(User, id=id)
-    #     subscribe = get_object_or_404(
-    #         Follow, user=user, author=author
-    #     )
-    #     subscribe.delete()
-    #
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
-    #
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def subscribe(self, request, **kwargs):
+        user = self.request.user
+        author = get_object_or_404(User, id=self.kwargs["pk"])
+        if author == user:
+            return Response(
+                'Нельзя подписываться на самого себя!',
+                status=status.HTTP_400_BAD_REQUEST)
 
-class ChangePasswordView(generics.CreateAPIView):
-    """Конечная точка для смены пароля."""
-    serializer_class = ChangePasswordSerializer
+        subscribe, created = Follow.objects.get_or_create(
+            user=request.user,
+            author=author
+        )
+        if not created:
+            return Response(
+                'Вы уже подписаны на данного автора!',
+                status=status.HTTP_400_BAD_REQUEST)
+        subscribe.save()
+        serializer = FollowerSerializer(author)
 
-    permission_classes = (IsAuthenticated,)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def get_object(self, queryset=None):
-        obj = self.request.user
-        return obj
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, **kwargs):
+        author = get_object_or_404(User, id=self.kwargs["pk"])
+        subscribe = get_object_or_404(
+            Follow, user=self.request.user, author=author
+        )
+        subscribe.delete()
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        serializer = self.get_serializer(data=request.data)
+        return Response('Подписка удалена!', status=status.HTTP_204_NO_CONTENT)
 
-        if serializer.is_valid():
-            # Проверить старый пароль
-            if not self.object.check_password(serializer.data.get("current_password")):
-                return Response({"current_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
-            # set_password также хеширует пароль, который получит пользователь
-            self.object.set_password(serializer.data.get("new_password"))
-            self.object.save()
-            response = {
-                'status': 'success',
-                'code': status.HTTP_200_OK,
-                'message': 'Пароль успешно обновлен',
-                'data': []
-            }
-
-            return Response(response)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UsersMeApiView(APIView):
-    """Отдельно описываем поведение для users/me."""
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        serializer = UserSerializer(self.request.user)
-        return Response(serializer.data)
+    @action(methods=['get'], detail=False, permission_classes=[IsAuthenticated])
+    def me(self, request):
+        serializer = UserShowSerializer(self.request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -169,9 +137,17 @@ class FollowViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        recipes_limit = self.request.query_params.get('recipes_limit')
+        if recipes_limit and recipes_limit.isnumeric():
+            context['recipes_limit'] = int(
+                self.request.query_params.get('recipes_limit'))
+        return context
+
 
 class FavoritesViewSet(viewsets.ModelViewSet):
-    queryset = Favorites.objects.all()
+    queryset = FavoritesRecipe.objects.all()
     serializer_class = FavoritesSerializer
     pagination_class = None
 

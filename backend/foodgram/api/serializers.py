@@ -1,9 +1,12 @@
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
+from rest_framework.fields import SerializerMethodField
 from rest_framework.validators import UniqueTogetherValidator
-from users.models import User
-from dish_recipes.models import Tag, Ingredient, IngredientAmount, Favorites, Follow, ShopList, Recipe, RecipeTag
+# from users.models import User
+from dish_recipes.models import Tag, Ingredient, IngredientAmount, FavoritesRecipe, Follow, ShopList, Recipe, RecipeTag
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -141,7 +144,7 @@ class RecipeAddSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return Favorites.objects.filter(user=request.user, recipe=obj).exists()
+        return FavoritesRecipe.objects.filter(user=request.user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
@@ -149,21 +152,6 @@ class RecipeAddSerializer(serializers.ModelSerializer):
             return False
         return ShopList.objects.filter(
             user=request.user, recipe=obj).exists()
-
-    # def get_ingredients(self, obj):
-    #     ingredients = IngredientAmount.objects.filter(recipes=obj)
-    #     data = []
-    #     for item in ingredients:
-    #         data.append({
-    #             "id": item.ingredient.id,
-    #             "name": item.ingredient.name,
-    #             "measurement_unit": item.ingredient.measurement_unit,
-    #             "amount": item.amount,
-    #         })
-    #     return data
-    # def get_ingredients(self, obj):
-    #     queryset = IngredientAmount.objects.filter(recipes=obj)
-    #     return IngredientAmountSerializer(queryset, many=True).data
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -242,9 +230,15 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
+    """Рецепт для подписки"""
+    image = serializers.SerializerMethodField('image_url')
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+    def image_url(self, obj):
+        return '/media/' + str(obj.image)
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -282,7 +276,7 @@ class FollowerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+        fields = ('id', 'username', 'email', 'first_name', 'last_name',
                   'is_subscribed', 'recipes', 'recipes_count')
 
     def get_is_subscribed(self, obj):
@@ -293,16 +287,14 @@ class FollowerSerializer(serializers.ModelSerializer):
             user=obj.user, author=obj.author
         ).exists()
 
-    # def get_recipes(self, obj):
-    #     request = self.context.get('request')
-    #     limit = request.GET.get('recipes_limit')
-    #     queryset = Recipe.objects.filter(author=obj.author)
-    #     if limit is not None:
-    #         queryset = Recipe.objects.filter(
-    #             author=obj.author
-    #         )[:int(limit)]
+    def get_recipes(self, obj):
+        recipes_limit = self.context.get('recipes_limit')
+        queryset = Recipe.objects.filter(author=obj.author)
+        if recipes_limit:
+            queryset = queryset[:recipes_limit]
 
-    # return FollowerRecipeSerializer(queryset, many=True).data
+        serializer = FollowerRecipeSerializer(queryset, many=True)
+        return serializer.data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
@@ -312,7 +304,7 @@ class FavoritesSerializer(serializers.ModelSerializer):
     """Сериализатор для модели избранного."""
 
     class Meta:
-        model = Favorites
+        model = FavoritesRecipe
         fields = ('user', 'recipe')
 
 
