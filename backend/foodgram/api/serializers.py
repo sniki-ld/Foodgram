@@ -161,9 +161,9 @@ class RecipeAddSerializer(serializers.ModelSerializer):
     #             "amount": item.amount,
     #         })
     #     return data
-    def get_ingredients(self, obj):
-        queryset = IngredientAmount.objects.filter(recipes=obj)
-        return IngredientAmountSerializer(queryset, many=True).data
+    # def get_ingredients(self, obj):
+    #     queryset = IngredientAmount.objects.filter(recipes=obj)
+    #     return IngredientAmountSerializer(queryset, many=True).data
 
 
 class RecipeSerializer(serializers.ModelSerializer):
