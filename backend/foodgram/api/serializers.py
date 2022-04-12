@@ -218,6 +218,13 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return recipe
 
+    def to_representation(self, instance):
+        return RecipeAddSerializer(
+            instance,
+            context={"request": self.context.get("request")}
+        ).data
+
+
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
     class Meta:
