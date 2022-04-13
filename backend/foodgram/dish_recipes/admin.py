@@ -39,7 +39,7 @@ class RecipeAdmin(admin.ModelAdmin):
     show_tags.short_description = 'Тэги в рецепте'
 
     def favorited_count(self, obj):
-        favorited_count = Favorites.objects.filter(recipe=obj).count()
+        favorited_count = FavoritesRecipe.objects.filter(recipe=obj).count()
         return favorited_count
 
     favorited_count.short_description = 'В избранном'
@@ -47,6 +47,8 @@ class RecipeAdmin(admin.ModelAdmin):
 
 class IngredientAmountAdmin(admin.ModelAdmin):
     list_display = ('ingredient', 'amount')
+
+
 
 
 class RecipeTagAdmin(admin.ModelAdmin):

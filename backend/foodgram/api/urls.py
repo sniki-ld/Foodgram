@@ -17,6 +17,5 @@ router.register('recipes', RecipeViewSet, basename='recipes')
 urlpatterns = [
     re_path(r'^auth/', include('djoser.urls')),
     re_path(r'^auth/', include('djoser.urls.authtoken')),
-    # path('users/me/', UsersMeApiView.as_view()),
     path('', include(router.urls))
 ]

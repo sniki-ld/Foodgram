@@ -230,15 +230,16 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
-    """Рецепт для подписки"""
+    """Вспомогательный сериализатор для рецептов в подписках."""
     image = serializers.SerializerMethodField('image_url')
+
+    def image_url(self, obj):
+        return '/media/' + str(obj.image)
 
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
 
-    def image_url(self, obj):
-        return '/media/' + str(obj.image)
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -257,13 +258,18 @@ class FollowSerializer(serializers.ModelSerializer):
             )
         ]
 
-    def validate(self, data):
-        if self.context['request'].user != data.get('author'):
-            return data
-        raise serializers.ValidationError("Нельзя подписаться на самого себя")
+    # def validate(self, data):
+    #     if self.context['request'].user != data.get('author'):
+    #         return data
+    #     raise serializers.ValidationError("Нельзя подписаться на самого себя!")
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return SubscriptionsSerializer(instance, context=context).data
 
 
-class FollowerSerializer(serializers.ModelSerializer):
+class SubscriptionsSerializer(serializers.ModelSerializer):
     """Подписаться"""
     id = serializers.ReadOnlyField(source='author.id')
     email = serializers.ReadOnlyField(source='author.email')
@@ -287,14 +293,29 @@ class FollowerSerializer(serializers.ModelSerializer):
             user=obj.user, author=obj.author
         ).exists()
 
+    # def get_recipes(self, obj):
+    # recipes = Recipe.objects.filter(author=obj).order_by("-pub_date")
+    #
+    # params = self.context.get("request").query_params
+    # recipes_limit = params.get("recipes_limit")
+    # if recipes_limit is not None:
+    #     recipes_limit = int(recipes_limit)
+    #     recipes = recipes[:recipes_limit]
+    #
+    # serializer = FollowerRecipeSerializer(
+    #     recipes,
+    #     many=True,
+    #     context={"request": self.context.get("request")}
+    # )
+    # return serializer.data
     def get_recipes(self, obj):
-        recipes_limit = self.context.get('recipes_limit')
-        queryset = Recipe.objects.filter(author=obj.author)
-        if recipes_limit:
-            queryset = queryset[:recipes_limit]
-
-        serializer = FollowerRecipeSerializer(queryset, many=True)
-        return serializer.data
+        params = self.context.get("request").query_params
+        limit = params.get('recipes_limit')
+        recipes = obj.author.recipes
+        if limit:
+            recipes = recipes.all()[:int(limit)]
+        context = {'request': self.context.get("request")}
+        return FollowerRecipeSerializer(recipes, context=context, many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
@@ -307,10 +328,50 @@ class FavoritesSerializer(serializers.ModelSerializer):
         model = FavoritesRecipe
         fields = ('user', 'recipe')
 
+    def validate(self, data):
+        request = self.context.get('request')
+        recipe_id = data['recipe'].id
+        favorite_exists = FavoritesRecipe.objects.filter(
+            user=request.user,
+            recipe__id=recipe_id
+        ).exists()
+
+        if request.method == 'GET' and favorite_exists:
+            raise serializers.ValidationError(
+                'Рецепт уже добавлен в избранное'
+            )
+
+        return data
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return FollowerRecipeSerializer(
+            instance.recipe, context=context).data
+
 
 class ShopListSerializer(serializers.ModelSerializer):
     """Сериализатор для модели списка покупок."""
 
-    class Meta:
+    class Meta(FavoritesSerializer.Meta):
         model = ShopList
-        fields = ('user', 'recipe')
+
+    def validate(self, data):
+        request = self.context.get('request')
+        recipe_id = data['recipe'].id
+        purchase_exists = ShopList.objects.filter(
+            user=request.user,
+            recipe__id=recipe_id
+        ).exists()
+
+        if request.method == 'GET' and purchase_exists:
+            raise serializers.ValidationError(
+                'Рецепт уже в списке покупок')
+
+        return data
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return FollowerRecipeSerializer(
+            instance.recipe, context=context).data

@@ -70,6 +70,9 @@ class IngredientAmount(models.Model):
         verbose_name = 'количество ингредиента в рецепте'
         verbose_name_plural = 'количество ингредиентов в рецепте'
 
+    def __str__(self):
+        return self.ingredient.name
+
 
 class Recipe(models.Model):
     """Модель, представляющая рецепт."""
@@ -89,7 +92,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         verbose_name='изображение',
-        upload_to='recipes/',
+        upload_to='media/recipes/',
     )
     ingredient = models.ManyToManyField(
         IngredientAmount,
@@ -138,6 +141,9 @@ class RecipeTag(models.Model):
         verbose_name = 'тэг-рецепт'
         verbose_name_plural = 'тэги-рецепты'
 
+    def __str__(self):
+        return f'{self.recipe} - тэг {self.tag}'
+
 
 class Follow(models.Model):
     """Модель, представляющая подписки."""
@@ -172,8 +178,8 @@ class FavoritesRecipe(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='favorite_user',
-        verbose_name='автор'
+        # related_name='favorite_user',
+        verbose_name='в избранном у пользователя'
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -201,7 +207,7 @@ class ShopList(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='user_shop_lists',
-        verbose_name='автор'
+        verbose_name='автор списка покупок'
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -215,7 +221,7 @@ class ShopList(models.Model):
         verbose_name_plural = 'списки покупок'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'],  name='unique_recipe_cart'
+                fields=['user', 'recipe'], name='unique_recipe_cart'
             )
         ]
 
