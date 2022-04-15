@@ -2,11 +2,12 @@ import csv
 import os
 
 from django.conf import settings
+
 from dish_recipes.models import Ingredient
 
 
 def csv_parser(file):
-    """Функционал по csv."""
+    """Функционал для csv."""
     file_path = os.path.join(settings.BASE_DIR, file)
     result = []
     with open(file_path, newline='', encoding='utf-8') as f:

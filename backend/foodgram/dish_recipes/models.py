@@ -1,7 +1,7 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -55,7 +55,7 @@ class Ingredient(models.Model):
 
 
 class IngredientAmount(models.Model):
-    """Модель для связи рецептов и ингредиентов."""
+    """Модель для связи ингредиентов и их количества в рецепте."""
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
@@ -92,7 +92,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         verbose_name='изображение',
-        upload_to='media/recipes/',
+        upload_to='recipes/',
     )
     ingredient = models.ManyToManyField(
         IngredientAmount,
@@ -137,12 +137,12 @@ class RecipeTag(models.Model):
         verbose_name='тэг'
     )
 
-    class Meta:
-        verbose_name = 'тэг-рецепт'
-        verbose_name_plural = 'тэги-рецепты'
+    # class Meta:
+    #     verbose_name = 'тэг-рецепт'
+    #     verbose_name_plural = 'тэги-рецепты'
 
-    def __str__(self):
-        return f'{self.recipe} - тэг {self.tag}'
+    # def __str__(self):
+    #     return f'{self.recipe} - тэг {self.tag}'
 
 
 class Follow(models.Model):
@@ -178,7 +178,6 @@ class FavoritesRecipe(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        # related_name='favorite_user',
         verbose_name='в избранном у пользователя'
     )
     recipe = models.ForeignKey(
