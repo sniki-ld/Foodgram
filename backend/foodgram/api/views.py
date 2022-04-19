@@ -1,15 +1,20 @@
 import datetime
+import io
 
-from django.http import HttpResponse
+from django.db.models import Sum
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from rest_framework import status, viewsets
 from rest_framework.authtoken.admin import User
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from dish_recipes.models import (FavoritesRecipe, Follow, Ingredient,
+from dish_recipes.models import (FavoritesRecipe, Ingredient,
                                  IngredientAmount, Recipe, ShopList, Tag)
 
 from .filters import IngredientFilter, RecipeFilter
@@ -33,21 +38,23 @@ class UserViewSet(ListRetrieveCreateViewSet):
     def set_password(self, request, *args, **kwargs):
         """Представление для эндпоинта смены пароля пользователя."""
         serializer = ChangePasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            if not self.request.user.check_password(
-                    serializer.data.get("current_password")):
-                return Response({"current_password": ["Неверный пароль!"]},
-                                status=status.HTTP_400_BAD_REQUEST)
-            self.request.user.set_password(
-                serializer.validated_data['new_password']
-            )
-            self.request.user.save()
-            response = {
-                'message': 'Пароль успешно обновлен!',
-            }
+        serializer.is_valid(raise_exception=True)
+        if not self.request.user.check_password(
+                serializer.data.get("current_password")):
+            return Response({"current_password": ["Неверный пароль!"]},
+                            status=status.HTTP_400_BAD_REQUEST)
+        self.request.user.set_password(
+            serializer.validated_data['new_password']
+        )
+        self.request.user.save()
+        response = {
+            'status': 'success',
+            'code': status.HTTP_204_NO_CONTENT,
+            'message': 'Пароль успешно обновлен!',
+            'data': []
+        }
 
-            return Response(response)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(response)
 
     @action(methods=['get'], detail=False,
             permission_classes=[IsAuthenticated])
@@ -59,10 +66,10 @@ class UserViewSet(ListRetrieveCreateViewSet):
     @action(methods=['get'], detail=False,
             permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
-        """Вывод всех подписок."""
-        queryset = Follow.objects.filter(user=self.request.user)
+        """Выводим все подписки."""
+        queryset = self.request.user.follower.filter(user=self.request.user)
         if not queryset.exists():
-            return Response({'error': 'Вы еще ни на кого не подписаны'},
+            return Response('Вы еще ни на кого не подписаны',
                             status=status.HTTP_400_BAD_REQUEST)
 
         page = self.paginate_queryset(queryset)
@@ -81,20 +88,9 @@ class UserViewSet(ListRetrieveCreateViewSet):
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
-        """Подписка на пользователя."""
+        """Подписываемся на пользователя."""
         user = self.request.user
         author = get_object_or_404(User, id=self.kwargs["pk"])
-
-        if user == author:
-            return Response({
-                'errors': 'Вы не можете подписаться на самого себя!'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        if Follow.objects.filter(user=user, author=author).exists():
-            return Response({
-                'errors': 'Вы уже подписаны на данного пользователя!'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
         data = {'user': user.id, 'author': author.id}
         serializer = FollowSerializer(
             data=data, context={'request': request}
@@ -105,13 +101,9 @@ class UserViewSet(ListRetrieveCreateViewSet):
 
     @subscribe.mapping.delete
     def delete_subscribe(self, requests, **kwargs):
-        """Отписаится от пользователя."""
+        """Удаляем подписку."""
         author = get_object_or_404(User, id=self.kwargs["pk"])
-        subscription = get_object_or_404(
-            Follow,
-            user=self.request.user,
-            author=author)
-        subscription.delete()
+        self.request.user.follower.filter(author=author).delete()
         return Response('Подписка удалена!', status=status.HTTP_204_NO_CONTENT)
 
 
@@ -134,7 +126,7 @@ class IngredientViewSet(ListRetrieveViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с рецептами."""
+    """Представление для работы с рецептами."""
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
     serializer_class = RecipeSerializer
@@ -175,9 +167,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
     def favorite(self, request, **kwargs):
+        """Добавляем рецепт в избранное."""
         recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
         user = self.request.user
         favorite, created = FavoritesRecipe.objects.get_or_create(
+
             user=user,
             recipe=recipe
         )
@@ -185,23 +179,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response('Данный рецепт уже в избранном!',
                             status=status.HTTP_400_BAD_REQUEST
                             )
-        favorite.save()
         serializer = FollowerRecipeSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
     def delete_favorite(self, request, **kwargs):
+        """Удаляем рецепт из избранного."""
         recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
-        favorite = get_object_or_404(FavoritesRecipe,
-                                     user=self.request.user,
-                                     recipe=recipe)
-        favorite.delete()
+        FavoritesRecipe.objects.filter(
+            user=self.request.user, recipe=recipe).delete()
         return Response('Рецепт удален из избранного!',
                         status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, **kwargs):
+        """Добавляем рецепт в список покупок."""
         recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
         user = self.request.user
         cart, created = ShopList.objects.get_or_create(
@@ -209,50 +202,67 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe=recipe
         )
         if not created:
-            return Response('Данный рецепт уже в корзине!',
+            return Response('Данный рецепт уже в списке покупок!',
                             status=status.HTTP_400_BAD_REQUEST
                             )
-        cart.save()
         serializer = FollowerRecipeSerializer(recipe)
         return Response(serializer.data,
                         status=status.HTTP_201_CREATED)
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, **kwargs):
+        """Удаляем рецепт из списка покупок."""
         recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
-        cart = get_object_or_404(ShopList, user=self.request.user,
-                                 recipe=recipe)
-        cart.delete()
+        ShopList.objects.filter(user=self.request.user, recipe=recipe).delete()
         return Response('Рецепт удален из списка покупок!',
                         status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
+        """
+        Формируем список продуктов для покупки и
+        возвращаем его в виде pdf-файла.
+        """
         user = self.request.user
-        shopping_cart = user.user_shop_lists.all()
-        purchase = {}
-        for item in shopping_cart:
-            recipe = item.recipe
-            ingredients = IngredientAmount.objects.filter(recipes=recipe)
-            for ingredient in ingredients:
-                amount = ingredient.amount
-                name = ingredient.ingredient.name
-                measurement_unit = ingredient.ingredient.measurement_unit
-                if name not in purchase:
-                    purchase[name] = {
-                        'measurement_unit': measurement_unit,
-                        'amount': amount
-                    }
-                else:
-                    purchase[name]['amount'] = (
-                            purchase[name]['amount'] + amount
-                    )
+        recipe_id = user.user_shop_lists.filter(user=user).values_list(
+            'recipe_id', flat=True)
+        ingredients = IngredientAmount.objects.values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(count=Sum('amount')).filter(recipes__id__in=recipe_id)
+        shopping_list = []
+        for ingredient in ingredients:
+            shopping_list.append(
+                f"{ingredient['ingredient__name']} -- "
+                f"{ingredient['count']} "
+                f"{ingredient['ingredient__measurement_unit']}")
 
-        shopping_list = ([f'{item} - {purchase[item]["amount"]}'
-                          f'{purchase[item]["measurement_unit"]} \n'
-                          for item, value in purchase.items()])
+        buffer = io.BytesIO()
+        products_to_buy = canvas.Canvas(buffer)
+
+        line = 800
+        pdfmetrics.registerFont(TTFont('FreeSans', 'FreeSans.ttf'))
+
+        products_to_buy.setFont('FreeSans', 16)
+        products_to_buy.drawString(15, line, "Список покупок:")
+        products_to_buy.setFont('FreeSans', 12)
+        line -= 20
+        for product in shopping_list:
+            line -= 20
+            to_print = f'{product}'
+            products_to_buy.drawString(15, line, to_print.capitalize())
+        line -= 55
+        products_to_buy.setFont('FreeSans', 10)
         today = datetime.date.today()
-        shopping_list.append(f'\n From FoodGram: Приятных покупок!\n {today}')
-        response = HttpResponse(shopping_list, 'Content-Type: text/plain')
-        response['Content-Disposition'] = 'attachment; filename="BuyList.txt"'
-        return response
+        products_to_buy.drawString(
+            15, line, 'From FoodGram:  Приятных покупок!'
+        )
+        line -= 20
+        products_to_buy.setFont('FreeSans', 9)
+        products_to_buy.drawString(15, line, F'{today}')
+
+        products_to_buy.showPage()
+        products_to_buy.save()
+
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename='BuyList.pdf')

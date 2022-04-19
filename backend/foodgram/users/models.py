@@ -10,14 +10,10 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'password', 'first_name', 'last_name']
 
+    @property
+    def is_admin_or_superuser(self):
+        """Описываем свойства для пермишенов."""
+        return self.is_staff or self.is_superuser
+
     def __str__(self):
         return self.username
-
-    def get_full_name(self):
-        return f'{self.first_name}  {self.last_name}'
-
-    def has_perm(self, perm, obj=None):
-        return True
-
-    def has_module_perms(self, app_label):
-        return True

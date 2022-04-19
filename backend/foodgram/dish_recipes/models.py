@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q, F
 
 User = get_user_model()
 
@@ -137,13 +138,6 @@ class RecipeTag(models.Model):
         verbose_name='тэг'
     )
 
-    # class Meta:
-    #     verbose_name = 'тэг-рецепт'
-    #     verbose_name_plural = 'тэги-рецепты'
-
-    # def __str__(self):
-    #     return f'{self.recipe} - тэг {self.tag}'
-
 
 class Follow(models.Model):
     """Модель, представляющая подписки."""
@@ -166,7 +160,9 @@ class Follow(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'], name='unique_follow'
-            )
+            ),
+            models.CheckConstraint(check=~Q(user=F('author')),
+                                   name='user_not_author')
         ]
 
     def __str__(self):

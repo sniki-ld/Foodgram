@@ -3,13 +3,11 @@ from rest_framework import permissions
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
-    Доступ на чтение для всех.
-    Изменение и удаление - только авторам рецепта.
+    Пользовательское разрешение, позволяющее
+    редактировать объект только автору и админу.
     """
 
-    message = 'У вас недостаточно прав для выполнения данной операции!'
-
     def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return obj.author == request.user
+        return (request.method in permissions.SAFE_METHODS
+                or obj.author == request.user
+                or request.user.is_superuser)
