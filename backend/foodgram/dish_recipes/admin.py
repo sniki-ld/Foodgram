@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import FavoritesRecipe, Follow, Ingredient, Recipe, ShopList, Tag
+from .models import (FavoritesRecipe, Follow, Ingredient, IngredientAmount,
+                     Recipe, RecipeTag, ShopList, Tag)
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -34,18 +35,28 @@ class RecipeAdmin(admin.ModelAdmin):
             [item.ingredient.name for item in obj.ingredient.all()]
         )
 
-    show_ingredients.short_description = 'Ингредиенты в рецепте'
+    show_ingredients.short_description = 'Ингредиенты рецепта'
 
     def show_tags(self, obj):
         return '\n'.join([item.name for item in obj.tag.all()])
 
-    show_tags.short_description = 'Тэги в рецепте'
+    show_tags.short_description = 'Тэги рецепта'
 
     def favorited_count(self, obj):
         favorited_count = FavoritesRecipe.objects.filter(recipe=obj).count()
         return favorited_count
 
     favorited_count.short_description = 'В избранном'
+
+
+class IngredientAmountAdmin(admin.ModelAdmin):
+    """Администрирование количества ингредиентов."""
+    list_display = ('ingredient', 'amount')
+
+
+class RecipeTagAdmin(admin.ModelAdmin):
+    """Администрирование тегов ы рецептах."""
+    list_display = ('recipe', 'tag')
 
 
 class FollowAdmin(admin.ModelAdmin):
@@ -64,8 +75,10 @@ class ShopListAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Tag, TagAdmin)
+admin.site.register(RecipeTag, RecipeTagAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(IngredientAmount, IngredientAmountAdmin)
 admin.site.register(Follow, FollowAdmin)
 admin.site.register(FavoritesRecipe, FavoritesRecipeAdmin)
 admin.site.register(ShopList, ShopListAdmin)

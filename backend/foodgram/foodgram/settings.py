@@ -66,7 +66,7 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 # DATABASES = {
 #     'default': {
 #         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-#         'NAME': os.getenv('DB_NAME'),
+#         'NAME': os.getenv('POSTGRES_DB'),
 #         'USER': os.getenv('POSTGRES_USER'),
 #         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
 #         'HOST': os.getenv('DB_HOST'),
@@ -125,8 +125,10 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6
 }
 
-STATIC_URL = '/static/'
+STATIC_URL = '/django_static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'django_static')
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

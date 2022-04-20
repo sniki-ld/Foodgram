@@ -138,6 +138,13 @@ class RecipeTag(models.Model):
         verbose_name='тэг'
     )
 
+    class Meta:
+        verbose_name = 'pецепт/тэг'
+        verbose_name_plural = 'pецепты/тэги'
+
+    # def __str__(self):
+    #     return self.tag.name
+
 
 class Follow(models.Model):
     """Модель, представляющая подписки."""

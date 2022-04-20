@@ -1,22 +1,17 @@
-import datetime
-import io
-
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 from rest_framework import status, viewsets
 from rest_framework.authtoken.admin import User
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from dish_recipes.models import (FavoritesRecipe, Ingredient,
-                                 IngredientAmount, Recipe, ShopList, Tag)
+from dish_recipes.models import (FavoritesRecipe, Ingredient, IngredientAmount,
+                                 Recipe, ShopList, Tag)
 
+from .download_pdf import download_pdf
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import ListRetrieveCreateViewSet, ListRetrieveViewSet
 from .pagination import CustomPagination
@@ -51,7 +46,6 @@ class UserViewSet(ListRetrieveCreateViewSet):
             'status': 'success',
             'code': status.HTTP_204_NO_CONTENT,
             'message': 'Пароль успешно обновлен!',
-            'data': []
         }
 
         return Response(response)
@@ -67,7 +61,7 @@ class UserViewSet(ListRetrieveCreateViewSet):
             permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         """Выводим все подписки."""
-        queryset = self.request.user.follower.filter(user=self.request.user)
+        queryset = self.request.user.follower.all()
         if not queryset.exists():
             return Response('Вы еще ни на кого не подписаны',
                             status=status.HTTP_400_BAD_REQUEST)
@@ -103,8 +97,14 @@ class UserViewSet(ListRetrieveCreateViewSet):
     def delete_subscribe(self, requests, **kwargs):
         """Удаляем подписку."""
         author = get_object_or_404(User, id=self.kwargs["pk"])
-        self.request.user.follower.filter(author=author).delete()
-        return Response('Подписка удалена!', status=status.HTTP_204_NO_CONTENT)
+        subscription = self.request.user.follower.filter(author=author)
+        if subscription.exists():
+            subscription.delete()
+            return Response('Подписка удалена!',
+                            status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'errors': 'У вас нет подписки на данного автора!'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class TagViewSet(ListRetrieveViewSet):
@@ -186,10 +186,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def delete_favorite(self, request, **kwargs):
         """Удаляем рецепт из избранного."""
         recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
-        FavoritesRecipe.objects.filter(
-            user=self.request.user, recipe=recipe).delete()
-        return Response('Рецепт удален из избранного!',
-                        status=status.HTTP_204_NO_CONTENT)
+        favorite = FavoritesRecipe.objects.filter(
+            user=self.request.user, recipe=recipe)
+        if favorite.exists():
+            favorite.delete()
+            return Response('Рецепт удален из избранного!',
+                            status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'errors': 'У вас нет такого рецепта!'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
@@ -202,7 +207,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe=recipe
         )
         if not created:
-            return Response('Данный рецепт уже в списке покупок!',
+            return Response({'errors': 'Данный рецепт уже в списке покупок!'},
                             status=status.HTTP_400_BAD_REQUEST
                             )
         serializer = FollowerRecipeSerializer(recipe)
@@ -212,10 +217,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, **kwargs):
         """Удаляем рецепт из списка покупок."""
-        recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
-        ShopList.objects.filter(user=self.request.user, recipe=recipe).delete()
-        return Response('Рецепт удален из списка покупок!',
-                        status=status.HTTP_204_NO_CONTENT)
+        recipe = get_object_or_404(Recipe,
+                                   id=self.kwargs["pk"])
+        shop_list = ShopList.objects.filter(user=self.request.user,
+                                            recipe=recipe)
+        if shop_list.exists():
+            shop_list.delete()
+            return Response('Рецепт удален из списка покупок!',
+                            status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'errors': 'В вашем списке'
+                                   ' покупок нет такого рецепта!'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
@@ -237,32 +250,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 f"{ingredient['count']} "
                 f"{ingredient['ingredient__measurement_unit']}")
 
-        buffer = io.BytesIO()
-        products_to_buy = canvas.Canvas(buffer)
-
-        line = 800
-        pdfmetrics.registerFont(TTFont('FreeSans', 'FreeSans.ttf'))
-
-        products_to_buy.setFont('FreeSans', 16)
-        products_to_buy.drawString(15, line, "Список покупок:")
-        products_to_buy.setFont('FreeSans', 12)
-        line -= 20
-        for product in shopping_list:
-            line -= 20
-            to_print = f'{product}'
-            products_to_buy.drawString(15, line, to_print.capitalize())
-        line -= 55
-        products_to_buy.setFont('FreeSans', 10)
-        today = datetime.date.today()
-        products_to_buy.drawString(
-            15, line, 'From FoodGram:  Приятных покупок!'
-        )
-        line -= 20
-        products_to_buy.setFont('FreeSans', 9)
-        products_to_buy.drawString(15, line, F'{today}')
-
-        products_to_buy.showPage()
-        products_to_buy.save()
-
-        buffer.seek(0)
+        buffer = download_pdf(shopping_list)
         return FileResponse(buffer, as_attachment=True, filename='BuyList.pdf')

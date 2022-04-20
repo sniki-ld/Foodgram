@@ -40,7 +40,6 @@ class UserSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return request.user.follower.filter(author=obj.id).exists()
-        return False
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
@@ -124,14 +123,12 @@ class RecipeReadOnlySerializer(serializers.ModelSerializer):
         if user.is_authenticated:
             return FavoritesRecipe.objects.filter(
                 user=user, recipe=obj).exists()
-        return False
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
         if user.is_authenticated:
             return ShopList.objects.filter(
                 user=user, recipe=obj).exists()
-        return False
 
     def image_url(self, obj):
         return '/media/' + str(obj.image)
@@ -175,12 +172,12 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop('ingredient')
         tags_data = validated_data.pop('tag')
         recipe = Recipe.objects.create(image=image, **validated_data)
-
         recipe.tag.set(tags_data)
         for ingredient in ingredients_data:
             add_ingredient = IngredientAmount.objects.create(
                 ingredient=ingredient['id'],
                 amount=ingredient['amount'])
+
             recipe.ingredient.add(add_ingredient)
         return recipe
 
