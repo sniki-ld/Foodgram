@@ -36,10 +36,15 @@ class UserSerializer(serializers.ModelSerializer):
 
         model = User
 
+    # def get_is_subscribed(self, obj):
+    #     request = self.context.get('request')
+    #     if request and request.user.is_authenticated:
+    #         request.user.follower.filter(author=obj.id).exists()
+    #         return True
+
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return request.user.follower.filter(author=obj.id).exists()
+        return bool(request) and request.user.is_authenticated and request.user.follower.filter(author=obj.id).exists()
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
