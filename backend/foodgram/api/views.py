@@ -1,9 +1,9 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
-from rest_framework.authtoken.admin import User
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -15,12 +15,13 @@ from .download_pdf import download_pdf
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import ListRetrieveCreateViewSet, ListRetrieveViewSet
 from .pagination import CustomPagination
-from .permissions import IsOwnerOrReadOnly
 from .serializers import (ChangePasswordSerializer, FollowerRecipeSerializer,
                           FollowSerializer, IngredientSerializer,
                           RecipeReadOnlySerializer, RecipeSerializer,
                           SubscriptionsSerializer, TagSerializer,
                           UserSerializer)
+
+User = get_user_model()
 
 
 class UserViewSet(ListRetrieveCreateViewSet):
@@ -97,14 +98,14 @@ class UserViewSet(ListRetrieveCreateViewSet):
     def delete_subscribe(self, requests, **kwargs):
         """Удаляем подписку."""
         author = get_object_or_404(User, id=self.kwargs["pk"])
-        subscription = self.request.user.follower.filter(author=author)
-        if subscription.exists():
-            subscription.delete()
-            return Response('Подписка удалена!',
-                            status=status.HTTP_204_NO_CONTENT)
-
-        return Response({'errors': 'У вас нет подписки на данного автора!'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        subscription = self.request.user.follower.filter(
+            author=author).delete()
+        if not subscription:
+            return Response({
+                'errors': 'У вас нет подписки на данного автора!'},
+                          status=status.HTTP_400_BAD_REQUEST)
+        return Response('Подписка удалена!',
+                        status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(ListRetrieveViewSet):
@@ -130,7 +131,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
     serializer_class = RecipeSerializer
-    permission_classes = [IsOwnerOrReadOnly, ]
+    permission_classes = [AllowAny]
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('tags', 'author',)
     filterset_class = RecipeFilter
@@ -187,14 +188,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Удаляем рецепт из избранного."""
         recipe = get_object_or_404(Recipe, id=self.kwargs["pk"])
         favorite = FavoritesRecipe.objects.filter(
-            user=self.request.user, recipe=recipe)
-        if favorite.exists():
-            favorite.delete()
-            return Response('Рецепт удален из избранного!',
-                            status=status.HTTP_204_NO_CONTENT)
-
-        return Response({'errors': 'У вас нет такого рецепта!'},
-                        status=status.HTTP_400_BAD_REQUEST)
+            user=self.request.user, recipe=recipe).delete()
+        if not favorite:
+            return Response({'errors': 'У вас нет такого рецепта!'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response('Рецепт удален из избранного!',
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
@@ -220,15 +219,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe,
                                    id=self.kwargs["pk"])
         shop_list = ShopList.objects.filter(user=self.request.user,
-                                            recipe=recipe)
-        if shop_list.exists():
-            shop_list.delete()
-            return Response('Рецепт удален из списка покупок!',
-                            status=status.HTTP_204_NO_CONTENT)
+                                            recipe=recipe).delete()
+        if not shop_list:
+            return Response({'errors': 'В вашем списке'
+                                       ' покупок нет такого рецепта!'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'errors': 'В вашем списке'
-                                   ' покупок нет такого рецепта!'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response('Рецепт удален из списка покупок!',
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):

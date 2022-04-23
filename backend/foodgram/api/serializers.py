@@ -16,13 +16,6 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    extra_kwargs = {'username': {'required': True},
-                    'email': {'required': True},
-                    'first_name': {'required': True},
-                    'last_name': {'required': True},
-                    'password': {'required': True}
-                    }
-
     class Meta:
         fields = (
             'id',
@@ -34,17 +27,20 @@ class UserSerializer(serializers.ModelSerializer):
             'is_subscribed'
         )
 
-        model = User
+        extra_kwargs = {'username': {'required': True},
+                        'email': {'required': True},
+                        'first_name': {'required': True},
+                        'last_name': {'required': True},
+                        'password': {'required': True}
+                        }
 
-    # def get_is_subscribed(self, obj):
-    #     request = self.context.get('request')
-    #     if request and request.user.is_authenticated:
-    #         request.user.follower.filter(author=obj.id).exists()
-    #         return True
+        model = User
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        return bool(request) and request.user.is_authenticated and request.user.follower.filter(author=obj.id).exists()
+        return (bool(request) and
+                request.user.is_authenticated and
+                request.user.follower.filter(author=obj.id).exists())
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
@@ -124,16 +120,18 @@ class RecipeReadOnlySerializer(serializers.ModelSerializer):
                   'cooking_time')
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
-        if user.is_authenticated:
-            return FavoritesRecipe.objects.filter(
-                user=user, recipe=obj).exists()
+        request = self.context.get('request')
+        return (bool(request) and
+                request.user.is_authenticated and
+                FavoritesRecipe.objects.filter(
+            user=request.user, recipe=obj).exists())
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
-        if user.is_authenticated:
-            return ShopList.objects.filter(
-                user=user, recipe=obj).exists()
+        request = self.context.get('request')
+        return (bool(request) and
+                request.user.is_authenticated and
+                ShopList.objects.filter(
+            user=request.user, recipe=obj).exists())
 
     def image_url(self, obj):
         return '/media/' + str(obj.image)
@@ -268,11 +266,10 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        return Follow.objects.filter(
-            user=obj.user, author=obj.author
-        ).exists()
+        return (bool(request) and
+                request.user.is_authenticated and
+                Follow.objects.filter(
+            user=obj.user, author=obj.author).exists())
 
     def get_recipes(self, obj):
         params = self.context.get("request").query_params

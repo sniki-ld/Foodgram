@@ -13,7 +13,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.CustomUser'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,7 +25,7 @@ INSTALLED_APPS = [
 
     'api.apps.ApiConfig',
     'dish_recipes.apps.DishRecipesConfig',
-    'users.apps.UsersConfig',
+    'users.apps.CustomUsersConfig',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -63,16 +63,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-#         'NAME': os.getenv('POSTGRES_DB'),
-#         'USER': os.getenv('POSTGRES_USER'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST'),
-#         'PORT': os.getenv('DB_PORT')
-#     }
-# }
 
 DATABASES = {
     'default': {

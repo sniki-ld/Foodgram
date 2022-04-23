@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     """Описываем кастомную модель пользователя."""
     email = models.EmailField(unique=True, max_length=254,
                               verbose_name='email')
@@ -17,3 +17,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def has_perm(self, perm, obj=None):
+        return self.is_staff
+
+    def has_module_perms(self, app_label):
+        return True

@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from .models import User
+from .models import CustomUser
 
 
-class UserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(admin.ModelAdmin):
     """ Администрирование пользователей."""
     list_display = ('id', 'email', 'username')
     list_filter = ('email', 'username')
@@ -12,4 +12,4 @@ class UserAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-admin.site.register(User, UserAdmin)
+admin.site.register(CustomUser, CustomUserAdmin)
