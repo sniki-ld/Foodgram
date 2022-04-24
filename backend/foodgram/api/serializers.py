@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
+from rest_framework.relations import SlugRelatedField, PrimaryKeyRelatedField
 from rest_framework.validators import UniqueTogetherValidator
 
 from dish_recipes.models import (FavoritesRecipe, Follow, Ingredient,
@@ -66,7 +66,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ('name', 'measurement_unit')
+        fields = ('id', 'name', 'measurement_unit')
 
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
@@ -94,12 +94,12 @@ class RecipeTagSerializer(serializers.ModelSerializer):
 
 class AddIngredientAmountSerializer(serializers.ModelSerializer):
     """Сериализатор для добавления ингредиентов в рецепт."""
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    id = PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField()
 
     class Meta:
+        fields = ('id', 'amount')
         model = IngredientAmount
-        fields = ('amount', 'id')
 
 
 class RecipeReadOnlySerializer(serializers.ModelSerializer):
@@ -180,7 +180,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             add_ingredient = IngredientAmount.objects.create(
                 ingredient=ingredient['id'],
                 amount=ingredient['amount'])
-
             recipe.ingredient.add(add_ingredient)
         return recipe
 
