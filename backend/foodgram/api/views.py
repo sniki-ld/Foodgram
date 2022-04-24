@@ -26,7 +26,7 @@ User = get_user_model()
 
 
 # class UserViewSet(ListRetrieveCreateViewSet):
-class UserAPIViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet):
     """Представление для эндпоинта users."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
