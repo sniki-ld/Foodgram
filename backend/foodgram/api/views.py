@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from djoser.views import UserViewSet
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -24,11 +25,13 @@ from .serializers import (ChangePasswordSerializer, FollowerRecipeSerializer,
 User = get_user_model()
 
 
-class UserViewSet(ListRetrieveCreateViewSet):
+# class UserViewSet(ListRetrieveCreateViewSet):
+class UserAPIViewSet(UserViewSet):
     """Представление для эндпоинта users."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomPagination
+    permission_classes = [AllowAny]
 
     @action(['post'], detail=False, permission_classes=(IsAuthenticated,))
     def set_password(self, request, *args, **kwargs):

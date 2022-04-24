@@ -126,6 +126,15 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6
 }
 
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': 'users/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'users/username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'users/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,
+    'SERIALIZERS': {},
+}
+
+
 STATIC_URL = '/django_static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'django_static')
 
