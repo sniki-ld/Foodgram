@@ -124,14 +124,14 @@ class RecipeReadOnlySerializer(serializers.ModelSerializer):
         return (bool(request) and
                 request.user.is_authenticated and
                 FavoritesRecipe.objects.filter(
-            user=request.user, recipe=obj).exists())
+                    user=request.user, recipe=obj).exists())
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         return (bool(request) and
                 request.user.is_authenticated and
                 ShopList.objects.filter(
-            user=request.user, recipe=obj).exists())
+                    user=request.user, recipe=obj).exists())
 
     def image_url(self, obj):
         return '/media/' + str(obj.image)
@@ -182,11 +182,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                 amount=ingredient['amount'])
             recipe.ingredient.add(add_ingredient)
         return recipe
-
-    def to_representation(self, instance):
-        return RecipeReadOnlySerializer(
-            instance,
-            context={"request": self.context.get("request")}).data
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredient')
@@ -268,7 +263,7 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
         return (bool(request) and
                 request.user.is_authenticated and
                 Follow.objects.filter(
-            user=obj.user, author=obj.author).exists())
+                    user=obj.user, author=obj.author).exists())
 
     def get_recipes(self, obj):
         params = self.context.get("request").query_params

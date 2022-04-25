@@ -14,9 +14,9 @@ from dish_recipes.models import (FavoritesRecipe, Ingredient, IngredientAmount,
 
 from .download_pdf import download_pdf
 from .filters import IngredientFilter, RecipeFilter
-from .mixins import ListRetrieveCreateViewSet, ListRetrieveViewSet
+from .mixins import ListRetrieveViewSet
 from .pagination import CustomPagination
-from .serializers import (ChangePasswordSerializer, FollowerRecipeSerializer,
+from .serializers import (FollowerRecipeSerializer,
                           FollowSerializer, IngredientSerializer,
                           RecipeReadOnlySerializer, RecipeSerializer,
                           SubscriptionsSerializer, TagSerializer,
@@ -25,41 +25,12 @@ from .serializers import (ChangePasswordSerializer, FollowerRecipeSerializer,
 User = get_user_model()
 
 
-# class UserViewSet(ListRetrieveCreateViewSet):
 class CustomUserViewSet(UserViewSet):
     """Представление для эндпоинта users."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
-
-    # @action(['post'], detail=False, permission_classes=(IsAuthenticated,))
-    # def set_password(self, request, *args, **kwargs):
-    #     """Представление для эндпоинта смены пароля пользователя."""
-    #     serializer = ChangePasswordSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     if not self.request.user.check_password(
-    #             serializer.data.get("current_password")):
-    #         return Response({"current_password": ["Неверный пароль!"]},
-    #                         status=status.HTTP_400_BAD_REQUEST)
-    #     self.request.user.set_password(
-    #         serializer.validated_data['new_password']
-    #     )
-    #     self.request.user.save()
-    #     response = {
-    #         'status': 'success',
-    #         'code': status.HTTP_204_NO_CONTENT,
-    #         'message': 'Пароль успешно обновлен!',
-    #     }
-    #
-    #     return Response(response)
-    #
-    # @action(methods=['get'], detail=False,
-    #         permission_classes=[IsAuthenticated])
-    # def me(self, request):
-    #     """Представление для эндпоинта 'текущий пользователь'."""
-    #     serializer = UserSerializer(self.request.user)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=['get'], detail=False,
             permission_classes=[IsAuthenticated])
@@ -88,7 +59,7 @@ class CustomUserViewSet(UserViewSet):
     def subscribe(self, request, **kwargs):
         """Подписываемся на пользователя."""
         user = self.request.user
-        author = get_object_or_404(User, id=self.kwargs["pk"])
+        author = get_object_or_404(User, id=self.kwargs["id"])
         data = {'user': user.id, 'author': author.id}
         serializer = FollowSerializer(
             data=data, context={'request': request}
@@ -100,13 +71,13 @@ class CustomUserViewSet(UserViewSet):
     @subscribe.mapping.delete
     def delete_subscribe(self, requests, **kwargs):
         """Удаляем подписку."""
-        author = get_object_or_404(User, id=self.kwargs["pk"])
+        author = get_object_or_404(User, id=self.kwargs["id"])
         subscription = self.request.user.follower.filter(
             author=author).delete()
         if not subscription:
             return Response({
                 'errors': 'У вас нет подписки на данного автора!'},
-                          status=status.HTTP_400_BAD_REQUEST)
+                status=status.HTTP_400_BAD_REQUEST)
         return Response('Подписка удалена!',
                         status=status.HTTP_204_NO_CONTENT)
 
@@ -123,7 +94,6 @@ class IngredientViewSet(ListRetrieveViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('name',)
     filterset_class = IngredientFilter
