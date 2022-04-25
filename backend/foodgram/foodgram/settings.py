@@ -63,13 +63,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
@@ -132,29 +125,11 @@ DJOSER = {
     'ACTIVATION_URL': 'users/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     'HIDE_USERS': False,
-    'SERIALIZERS': {
-        # 'user': 'api.serializers.UserSerializer',
-        # 'current_user': 'api.serializers.UserSerializer',
-        # 'user_create': 'api.serializers.UserSerializer',
-    },
     'PERMISSIONS': {
         'user': ['rest_framework.permissions.AllowAny'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }
-# DJOSER = {
-#     'LOGIN_FIELD': 'email',
-#     'HIDE_USERS': False,
-#     'SERIALIZERS': {
-#         'user': 'users.serializers.UserSerializer',
-#         'current_user': 'users.serializers.UserSerializer',
-#         'user_create': 'users.serializers.UserSerializer',
-#     },
-#     'PERMISSIONS': {
-#         'user': ['rest_framework.permissions.AllowAny'],
-#         'user_list': ['rest_framework.permissions.AllowAny'],
-#     },
-# }
 
 STATIC_URL = '/django_static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'django_static')
