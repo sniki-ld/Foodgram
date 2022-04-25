@@ -42,4 +42,4 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: snikild/foodgram:latest
+          tags: snikild/foodgram_back:latest
