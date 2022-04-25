@@ -1,9 +1,9 @@
 from django.contrib.auth import get_user_model
-from djoser.views import UserViewSet
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -16,11 +16,10 @@ from .download_pdf import download_pdf
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import ListRetrieveViewSet
 from .pagination import CustomPagination
-from .serializers import (FollowerRecipeSerializer,
-                          FollowSerializer, IngredientSerializer,
-                          RecipeReadOnlySerializer, RecipeSerializer,
-                          SubscriptionsSerializer, TagSerializer,
-                          UserSerializer)
+from .serializers import (FollowerRecipeSerializer, FollowSerializer,
+                          IngredientSerializer, RecipeReadOnlySerializer,
+                          RecipeSerializer, SubscriptionsSerializer,
+                          TagSerializer, UserSerializer)
 
 User = get_user_model()
 

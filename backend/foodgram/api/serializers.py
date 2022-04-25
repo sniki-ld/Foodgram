@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField, PrimaryKeyRelatedField
+from rest_framework.relations import PrimaryKeyRelatedField, SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator
 
 from dish_recipes.models import (FavoritesRecipe, Follow, Ingredient,

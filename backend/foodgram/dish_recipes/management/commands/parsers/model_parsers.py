@@ -3,7 +3,7 @@ import os
 
 from django.conf import settings
 
-from dish_recipes.models import Ingredient
+from models import Ingredient
 
 
 def csv_parser(file):
