@@ -48,7 +48,8 @@ docker-compose exec backend python3 manage.py loaddata fixtures.json
 Приложение запущено и готово к использованию.
 
 ___
-##Для репозитория настроен CI/CD.
+## Для репозитория настроен CI/CD.
+
 **Для запуска приложения:**
 
 1.Сделайте Fork данного репозитория
@@ -56,18 +57,19 @@ ___
 2.Подготовьте vps с ubuntu и docker
 
 3.Добавьте action secrets под Ваш проект:
-DB_ENGINE
-DB_HOST
-DB_NAME
-DB_PORT
-DOCKER_PASSWORD
-DOCKER_USERNAME
-HOST
-PASSPHRASE
-POSTGRES_DB
-POSTGRES_PASSWORD
-POSTGRES_USER
-SECRET_KEY
-SSH_KEY
-USER
+
+- DB_ENGINE 
+- DB_HOST
+- DB_NAME
+- DB_PORT
+- DOCKER_PASSWORD
+- DOCKER_USERNAME
+- HOST
+- PASSPHRASE
+- POSTGRES_DB
+- POSTGRES_PASSWORD
+- POSTGRES_USER
+- SECRET_KEY
+- SSH_KEY
+- USER
 (пользователь на хосте)
