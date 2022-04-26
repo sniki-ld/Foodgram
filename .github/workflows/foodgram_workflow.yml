@@ -64,7 +64,7 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             sudo docker pull snikild/foodgram_back
-            sudo docker pull snikild/foodgram_front
+            sudo docker pull snikild/foodgram_front:v19.04.22
             sudo docker-compose stop
             sudo docker-compose rm backend
             sudo docker-compose rm frontend
