@@ -38,9 +38,7 @@ services:
       - static_value:/usr/share/nginx/html/django_static/
     depends_on:
       - backend
-#      - frontend
 
 volumes:
   media_value:
   static_value:
-#  postgres_data:
