@@ -1,3 +1,10 @@
+![workflow](https://github.com/sniki-ld/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
+
+https://foodgram-ld.ddns.net//
+https://foodgram-ld.ddns.net//admin/
+
+Учетные данные superuser:
+user: deni@ld.com password: 123
 ## Foodgram
 ___
 Проект Foodgram - это онлайн-сервис и API для него. 
@@ -39,3 +46,28 @@ docker-compose exec backend python manage.py createsuperuser
 docker-compose exec backend python3 manage.py loaddata fixtures.json
 ```
 Приложение запущено и готово к использованию.
+
+___
+##Для репозитория настроен CI/CD.
+**Для запуска приложения:**
+
+1.Сделайте Fork данного репозитория
+
+2.Подготовьте vps с ubuntu и docker
+
+3.Добавьте action secrets под Ваш проект:
+DB_ENGINE
+DB_HOST
+DB_NAME
+DB_PORT
+DOCKER_PASSWORD
+DOCKER_USERNAME
+HOST
+PASSPHRASE
+POSTGRES_DB
+POSTGRES_PASSWORD
+POSTGRES_USER
+SECRET_KEY
+SSH_KEY
+USER
+(пользователь на хосте)
