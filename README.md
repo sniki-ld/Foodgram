@@ -26,16 +26,16 @@ DB_PORT=5432
 ```
 docker-compose up -d --build
 ```
-В контейнере web выполнить миграции:
+В контейнере backend выполнить миграции:
 ```
-docker-compose exec web python manage.py migrate
+docker-compose exec backend python manage.py migrate
 ```
 Создать суперпользователя
 ```
-docker-compose exec web python manage.py createsuperuser
+docker-compose exec backend python manage.py createsuperuser
 ```
 Загружаем подготовленные данные для нашего приложения
 ```
-docker-compose exec web python3 manage.py loaddata fixtures.json
+docker-compose exec backend python3 manage.py loaddata fixtures.json
 ```
 Приложение запущено и готово к использованию.
