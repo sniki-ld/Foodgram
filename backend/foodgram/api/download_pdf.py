@@ -35,5 +35,4 @@ def download_pdf(items):
     products_to_buy.save()
 
     buffer.seek(0)
-
     return buffer
