@@ -1,6 +1,7 @@
 ![workflow](https://github.com/sniki-ld/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
 
 http://foodgram-ld.ddns.net/
+
 http://foodgram-ld.ddns.net/admin/
 
 Учетные данные superuser:

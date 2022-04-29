@@ -43,16 +43,6 @@ class UserSerializer(serializers.ModelSerializer):
                 request.user.follower.filter(author=obj.id).exists())
 
 
-class ChangePasswordSerializer(serializers.ModelSerializer):
-    """Сериализатор смены пароля для модели пользователя."""
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-
-    class Meta:
-        model = User
-        fields = ('current_password', 'new_password')
-
-
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор для модели тегов."""
 
