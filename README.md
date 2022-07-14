@@ -4,8 +4,6 @@ http://foodgram-ld.ddns.net/
 
 http://foodgram-ld.ddns.net/admin/
 
-Учетные данные superuser:
-user: deni@ld.com password: 123
 ## Foodgram
 ___
 Проект Foodgram - это онлайн-сервис и API для него. 
@@ -128,6 +126,13 @@ docker exec -it <CONTAINER ID> bash
 Ctrl+D
 ```
 ### Проект будет доступен по вашему IP
+___
+### Авторы
+Елена Денисова - Разработала бэкенд и деплой для сервиса Foodgram.
+
+
+Яндекс.Практикум - Фронтенд для сервиса Foodgram.
+
 
 
 
