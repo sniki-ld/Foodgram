@@ -1,5 +1,4 @@
-![foodgram CI/CD workflow]
-(https://github.com/sniki-ld/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
+![foodgram CI/CD workflow](https://github.com/sniki-ld/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
 
 ## Foodgram
 ___
