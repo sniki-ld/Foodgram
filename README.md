@@ -1,6 +1,3 @@
-![workflow](https://github.com/sniki-ld/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
-
-
 ## Foodgram
 ___
 Проект Foodgram - это онлайн-сервис и API для него.
