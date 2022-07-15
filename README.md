@@ -2,7 +2,7 @@
 ___
 Проект Foodgram - это онлайн-сервис и API для него.
 ___
-####Технологии:
+#### Технологии:
 - Python
 - Django
 - Django Rest Framework
@@ -77,7 +77,10 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 - Локально отредактируйте файл infra/nginx.conf и в строке server_name впишите свой IP
-- Скопируйте файлы _docker-compose.yaml_ и _nginx.conf_ из вашего проекта на сервер в _home/<ваш_username>/docker-compose.yaml_ и _home/<ваш_username>/nginx.conf_ соответственно.
+
+  
+- Скопируйте файлы _docker-compose.yaml_ и _nginx.conf_ из вашего проекта на сервер 
+  в _home/<ваш_username>/docker-compose.yaml_ и _home/<ваш_username>/nginx.conf_ соответственно.
 ```
 scp docker-compose.yml <username>@<host>:/home/<username>/docker-compose.yml
 scp nginx.conf <username>@<host>:/home/<username>/nginx.conf
